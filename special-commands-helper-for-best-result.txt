@@ -1,0 +1,13 @@
+*example: make categoies feature clone as brands feature
+
+# Run migrations
+php artisan migrate:fresh --path=database/new-migrations
+
+# Seed data
+php artisan db:seed --class=HealthDemoSeeder
+
+# Generate migrations from existing database
+php artisan migrations:generate-from-db
+
+# Test migrations (shows SQL without executing)
+php artisan migrate --pretend --path=database/new-migrations

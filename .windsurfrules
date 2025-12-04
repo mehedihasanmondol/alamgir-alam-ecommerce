@@ -1,0 +1,1639 @@
+# Windsurf AI Guidelines for Laravel Ecommerce + Blog Project
+
+## Project Overview
+This is a Laravel-based ecommerce and blog platform with stock management, finance tracking, and comprehensive admin features.
+
+---
+
+## Core Technologies & Stack
+- **Backend**: Laravel 11.x (PHP 8.2+)
+- **Frontend**: Blade Templates (NO separate frontend framework)
+- **Dynamic Components**: Livewire 3.x for search, filters, and interactive elements
+- **CSS**: Tailwind CSS (local, NOT CDN)
+- **JavaScript**: Alpine.js (local, NOT CDN) + Custom JS
+- **Database**: MySQL 8.x
+- **Authentication**: Laravel Breeze + Social login (Google, Facebook)
+- **SMS**: Integration for order status & verification
+
+---
+
+
+### All documentation tasks must follow this rule**
+- Whenever we create or update or read any documentation file, it must be saved inside the 'development-docs' folder.
+- No documentation should be placed outside this folder except 'editor-task-management.md' .
+
+
+## Task Management System (Editor Workflow)
+
+- File Name: editor-task-management.md
+
+- Purpose: To manage and document all feature creation or modification tasks performed by the code editor.
+
+# Workflow Rules
+
+- Task Division:
+  - Every new feature or modification must be broken down into multiple clear steps.
+  - Each step should include what needs to be done and how it should be implemented.
+
+- Progress Tracking:
+  - The editor must record which steps are completed and which are pending.
+  - All progress updates must be reflected in editor-task-management.md.
+
+- Pre-Execution Check:
+  - Before starting any new task, the editor must check the file for existing pending tasks.
+  - If pending tasks exist, the editor should request permission to complete them first.
+
+- Task Updates:
+  - Once a step is completed, it should be removed from the file.
+  - Any upcoming or dependent tasks should be added immediately.
+
+- Documentation Consistency:
+  - The file must always represent the current and accurate state of all ongoing and upcoming tasks.
+  - No task should be performed without being logged or updated in this file.
+
+---
+
+## Critical Rules - ALWAYS FOLLOW
+
+### 1. NO CDN Usage
+- ❌ NEVER use CDN links for CSS/JS
+- ✅ ALWAYS install packages via npm/composer
+- ✅ Use `npm install` and import in resources/js or resources/css
+- ✅ Compile with Vite: `npm run dev` or `npm run build`
+
+### 2. Project Structure (Module-Based)
+```
+app/
+├── Modules/
+│   ├── Ecommerce/
+│   │   ├── Product/
+│   │   │   ├── Controllers/
+│   │   │   ├── Models/
+│   │   │   ├── Services/
+│   │   │   ├── Repositories/
+│   │   │   └── Requests/
+│   │   ├── Order/
+│   │   ├── Cart/
+│   │   └── Category/
+│   ├── Blog/
+│   │   ├── Controllers/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Repositories/
+│   ├── Stock/
+│   │   ├── Controllers/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Repositories/
+│   ├── Finance/
+│   │   ├── Controllers/
+│   │   ├── Models/
+│   │   ├── Services/
+│   │   └── Repositories/
+│   └── Admin/
+│       ├── Controllers/
+│       ├── Services/
+│       └── Middleware/
+├── Http/
+│   ├── Controllers/
+│   ├── Middleware/
+│   └── Requests/
+├── Services/
+│   ├── SmsService.php
+│   ├── PaymentService.php
+│   ├── SeoService.php
+│   └── AdminSearchService.php
+├── Traits/
+│   ├── HasSeo.php
+│   ├── HasUniqueSlug.php
+│   └── Trackable.php
+└── Livewire/
+    ├── Product/
+    ├── Cart/
+    ├── Admin/
+    └── Search/
+
+resources/
+├── views/
+│   ├── layouts/
+│   │   ├── app.blade.php
+│   │   ├── admin.blade.php
+│   │   └── components/
+│   ├── components/
+│   │   ├── button-primary.blade.php
+│   │   ├── card.blade.php
+│   │   ├── modal.blade.php
+│   │   └── alert.blade.php
+│   ├── frontend/
+│   │   ├── home/
+│   │   ├── shop/
+│   │   ├── product/
+│   │   └── blog/
+│   ├── admin/
+│   │   ├── dashboard/
+│   │   ├── products/
+│   │   ├── orders/
+│   │   ├── stock/
+│   │   └── finance/
+│   └── livewire/
+├── js/
+│   ├── app.js
+│   └── admin.js
+└── css/
+    ├── app.css
+    ├── admin.css
+    └── theme.css
+```
+
+### 3. Blade View Rules
+- Use Blade components for reusable UI elements
+- Component location: `resources/views/components/`
+- Example: `<x-product-card :product="$product" />`
+- Always use `@props([])` to define component properties
+- Use slots for flexible content injection
+
+### 4. Livewire Usage (Only Where Needed)
+**Use Livewire for:**
+- Product search with instant results
+- Product filters (category, price, brand)
+- Cart management (add/remove without page reload)
+- Wishlist toggle
+- Stock level updates
+- Real-time notifications
+- Admin global search
+
+**DO NOT use Livewire for:**
+- Static pages
+- Simple forms
+- Non-interactive lists
+
+**Livewire Component Structure:**
+```php
+app/Livewire/
+├── Product/
+│   ├── SearchProducts.php
+│   ├── ProductFilters.php
+│   ├── AttributeManager.php
+│   ├── VariantGenerator.php
+│   └── VariantList.php
+├── Cart/
+│   └── CartManager.php
+└── Admin/
+    ├── StockAlert.php
+    └── GlobalSearch.php
+```
+
+### 5. Service Layer Pattern
+- Business logic MUST be in Service classes
+- Controllers should be thin (max 20 lines per method)
+- Example:
+```php
+// ✅ Good
+public function store(ProductRequest $request)
+{
+    $product = $this->productService->create($request->validated());
+    return redirect()->route('products.show', $product);
+}
+
+// ❌ Bad - Logic in controller
+public function store(Request $request)
+{
+    $product = new Product();
+    $product->name = $request->name;
+    // ... 50 lines of logic
+}
+```
+
+### 6. Repository Pattern
+- Database queries in Repository classes
+- Inject repositories into services
+```php
+app/Repositories/
+├── ProductRepository.php
+├── VariantRepository.php
+├── OrderRepository.php
+└── StockRepository.php
+```
+
+### 7. Documentation Requirements
+**EVERY new file MUST have:**
+```php
+/**
+ * ModuleName: [Module Name]
+ * Purpose: [What this class does]
+ * 
+ * Key Methods:
+ * - methodName(): Description
+ * 
+ * Dependencies:
+ * - ServiceName
+ * - RepositoryName
+ * 
+ * @category [Category]
+ * @package  [Package]
+ * @author   [Your Name]
+ * @created  [Date]
+ * @updated  [Date]
+ */
+```
+
+### All documentation tasks must follow this rule**
+- Whenever we create or update or read any documentation file, it must be saved inside the 'development-docs' folder.
+- No documentation should be placed outside this folder except 'editor-task-management.md' .
+
+**Update CHANGELOG.md after every feature:**
+```markdown
+## [Date] - Module: Feature Name
+- Added: [description]
+- Changed: [description]
+- Fixed: [description]
+```
+
+### 8. SEO Management
+- Every page should have SEO meta
+- Use a `HasSeo` trait for models
+```php
+trait HasSeo
+{
+    public function getSeoTitleAttribute()
+    {
+        return $this->meta_title ?? $this->title ?? $this->name;
+    }
+
+    public function getSeoDescriptionAttribute()
+    {
+        return $this->meta_description ?? Str::limit($this->description ?? '', 160);
+    }
+
+    public function getSeoKeywordsAttribute()
+    {
+        return $this->meta_keywords ?? '';
+    }
+}
+```
+
+### 9. Image Management
+- Store images in organized folders
+```
+storage/app/public/
+├── products/
+│   ├── thumbnails/
+│   └── originals/
+├── variants/
+├── categories/
+├── blog/
+└── pages/
+```
+- Always create thumbnails (use Intervention Image)
+- Image naming: `{type}_{id}_{timestamp}.{ext}`
+
+### 10. Database Design
+- Use migrations for ALL database changes
+- Soft deletes for important data
+- Index foreign keys and search columns
+- Use polymorphic relations where appropriate
+
+### 11. Security Rules
+- Always validate user input
+- Use Form Requests for complex validation
+- Sanitize HTML content (blog posts)
+- Implement CSRF protection (Laravel default)
+- Use rate limiting for SMS and authentication
+
+### 12. Code Quality
+- Follow PSR-12 coding standards
+- Use type hints for all methods
+- Use early returns to reduce nesting
+- Maximum cyclomatic complexity: 10
+- Maximum method length: 30 lines
+
+### 13. Testing Requirements
+- Write feature tests for critical flows:
+  - Product purchase flow
+  - Order creation
+  - Stock management
+  - Payment processing
+  - Variant generation
+- Test coverage minimum: 60%
+
+### 14. Pagination Rules
+- Always include pagination when displaying or returning list data
+- Default pagination limit: 10 (configurable via .env: `PAGINATE=10`)
+- When generating controller `index()` methods:
+  - Use Eloquent pagination: `Model::query()->paginate(config('app.paginate', 10))`
+  - Never use `get()` or `all()` for large datasets
+- For API endpoints, return paginated JSON format:
+```json
+{
+    "success": true,
+    "message": "Data fetched successfully",
+    "data": {
+        "items": [...],
+        "pagination": {
+            "current_page": 1,
+            "per_page": 10,
+            "total": 145
+        }
+    }
+}
+```
+- Include pagination links in Blade views: `{{ $items->links() }}`
+
+### 15. Soft Delete Standards
+- Always prefer **soft deletes** instead of hard deletes
+- All Eloquent models must include the `SoftDeletes` trait if data is user-related or business-critical
+```php
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Product extends Model
+{
+    use SoftDeletes;
+}
+```
+- Never call `->delete()` directly without confirming `SoftDeletes` usage
+- When force-deleting:
+  - Action performed only by authorized admin roles
+  - All related data integrity (foreign keys) handled properly
+  - Event logged in `activity_log` table
+- Delete operations must fire model events: `deleted`, `forceDeleted`
+- Relationships should include `withTrashed()` or `onlyTrashed()` only when needed
+- Never show deleted (trashed) data in normal queries unless explicitly required
+
+### 16. Activity Logging Rules
+- Log all deletion actions via `spatie/laravel-activitylog`
+- Include: user_id, model_type, model_id, event, properties, ip_address, user_agent, created_at
+- Example:
+```php
+activity()
+    ->performedOn($model)
+    ->causedBy(auth()->user())
+    ->withProperties(['type' => 'delete'])
+    ->log('Deleted record');
+```
+
+### 17. Security & Deletion Workflow
+- Protect all destructive routes with middleware (auth + admin)
+- Never expose soft-deleted data via public API
+- Use database transactions for multi-table delete operations
+- Ensure all foreign key constraints satisfied after deletion
+- Add tests for delete/restore actions in each feature
+- Always ask for confirmation before performing destructive actions
+
+### 18. Example Controller Deletion Method
+```php
+public function destroy(Product $product)
+{
+    $product->delete(); // soft delete
+
+    activity()
+        ->performedOn($product)
+        ->causedBy(auth()->user())
+        ->log('Product deleted');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Product deleted successfully',
+    ]);
+}
+```
+
+### 19. Restore Rule
+- When restoring soft-deleted data, verify:
+  - Related data still valid
+  - No duplicate conflicts
+  - Log restoration event
+
+### 20. UI/UX Design Consistency Rules
+- Maintain a single unified UI/UX theme across the application
+- Use the same base layout for all pages (`layouts.app`, `layouts.admin`)
+- Shared UI elements must use centralized reusable components
+- Do not mix inline styles - always use class-based styling (Tailwind)
+- Maintain color palette and typography consistency defined in `/resources/css/theme.css`
+- Follow spacing and grid system (8px base spacing unit)
+- **Buttons:**
+  - Primary: solid background (theme color), rounded-lg, medium shadow
+  - Secondary: outline variant with hover effect
+  - Disabled: reduced opacity, no hover
+- **Tables:**
+  - Always use striped rows, responsive container, consistent header color
+  - Include pagination controls in footer
+- **Forms:**
+  - Standardized input fields with clear labels and validation messages
+  - Consistent width, padding, and placeholder style
+- Use icons from single library (Lucide icons)
+- Use global CSS variables for color, spacing, font-size, and radius
+- Follow standard responsive breakpoints:
+  - sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px
+- Use transition and animation durations consistently (`duration-200`, `ease-in-out`)
+- Maintain consistent component naming:
+  - `ButtonPrimary.blade.php`, `CardBase.blade.php`, `ModalConfirm.blade.php`
+- Show a toast notification for admin panel CRUD actions
+- Bulk action on every list data shown on admin panel. like: delete, export etc. as per data facility.
+
+### 21. Social Login Implementation
+```php
+// Use Laravel Socialite
+composer require laravel/socialite
+
+// Providers: Google, Facebook
+// Store social IDs in users table
+```
+
+### 22. SMS Integration
+```php
+// Use a service provider (e.g., Twilio, Nexmo)
+// Implement queue for SMS sending
+// Use for:
+// - Order status updates
+// - Registration verification (OTP)
+// - Password reset
+```
+
+### 23. Database Column Name Resolution Rule
+
+**CRITICAL: Before Creating New Columns or Migrations**
+
+When encountering a column name issue or missing column error:
+
+1. **First Check**: Look for relevant or alternative column names in the existing table schema
+2. **Use Existing Columns**: If a relevant or alternative name exists, use that column instead
+3. **DO NOT**: Create new columns or migrations if a suitable column already exists
+4. **DO NOT**: Rename existing columns without explicit approval
+
+**Examples:**
+
+**✅ Correct Approach:**
+```php
+// Error: Column 'user_id' not found in 'orders' table
+// Existing columns: customer_id
+
+// ✅ Use existing alternative
+Order::where('customer_id', $userId)->get();
+// Instead of creating new migration for user_id
+```
+
+**✅ Correct Approach:**
+```php
+// Error: Column 'product_name' not found
+// Existing columns: name, title
+
+// ✅ Use existing relevant column
+$product->name // or $product->title
+// Instead of adding product_name column
+```
+
+**❌ Wrong Approach:**
+```php
+// Error: Column 'thumbnail' not found
+// Existing columns: thumbnail_path, image_path
+
+// ❌ Creating new migration
+Schema::table('products', function (Blueprint $table) {
+    $table->string('thumbnail');
+});
+// This is WRONG - use existing thumbnail_path instead
+```
+
+**Column Name Mapping Strategy:**
+
+Before creating any migration, check for these common alternatives:
+
+| Looking For | Check These Alternatives |
+|------------|-------------------------|
+| user_id | customer_id, client_id, author_id, created_by |
+| product_name | name, title, product_title |
+| image | image_path, thumbnail_path, photo, picture |
+| description | details, content, body, text |
+| price | amount, cost, value, rate |
+| quantity | qty, stock, amount |
+| status | state, is_active, active, enabled |
+| created_at | date_created, created_date, timestamp |
+| phone | phone_number, mobile, contact |
+| address | location, address_line1, street |
+
+**Workflow:**
+
+1. **Error Occurs**: Column not found error appears
+2. **Inspect Schema**: Check existing table structure using:
+   - `php artisan db:table table_name`
+   - Database GUI tool
+   - Check migration files
+3. **Find Alternative**: Look for relevant or alternative column names
+4. **Use Existing**: Update code to use the existing column
+5. **Document**: Add comment explaining the column mapping if not obvious
+
+**When New Column IS Required:**
+
+Only create new columns if:
+- No relevant or alternative column exists in the table
+- The existing column has a completely different purpose/data type
+- Adding new functionality that genuinely needs new data storage
+- After confirming with project lead or documentation
+
+**Code Review Checklist:**
+
+Before committing any migration:
+- [ ] Verified no alternative column exists
+- [ ] Checked all column name variations
+- [ ] Reviewed existing table schema
+- [ ] Confirmed new column is genuinely needed
+- [ ] Documented reason for new column in migration
+
+---
+
+## URL Structure & Routing Rules
+
+### CRITICAL: URL patterns are strictly defined
+
+**Product URLs:**
+- Pattern: `domain.com/{product-slug}`
+- Example: `domain.com/samsung-galaxy-s24`
+- Route name: `products.show`
+- Controller: `ProductController@show`
+- Parameter: `{slug}` (product slug only, NO prefix)
+
+**Blog URLs:**
+- Pattern: `domain.com/{blog-slug}`
+- Example: `domain.com/laravel-tips-and-tricks`
+- Route name: `blog.show`
+- Controller: `BlogController@show`
+- Parameter: `{slug}` (blog post slug only, NO prefix)
+
+### Slug Conflict Resolution Strategy
+Since products and blog posts share the same URL pattern:
+1. Check products table first for slug match
+2. If not found, check blog posts table for slug match
+3. If neither found, return 404
+
+### Implementation Pattern:
+
+**Route (web.php):**
+```php
+// Single route handler for slug-based content
+Route::get('/{slug}', [ContentController::class, 'show'])->name('content.show');
+```
+
+**ContentController:**
+```php
+public function show(string $slug)
+{
+    // Try product first
+    $product = Product::where('slug', $slug)->first();
+    if ($product) {
+        return view('frontend.products.show', compact('product'));
+    }
+    
+    // Then try blog
+    $post = Post::where('slug', $slug)->first();
+    if ($post) {
+        return view('frontend.blog.show', compact('post'));
+    }
+    
+    // Neither found
+    abort(404);
+}
+```
+
+### Slug Generation Rules
+- ALWAYS generate unique slugs across products AND blog posts
+- Check both tables before saving a slug
+- Append incremental numbers if conflict: `laptop-hp-15s-2`, `laptop-hp-15s-3`
+- Store slug in both `products.slug` and `posts.slug` columns
+- Index slug columns for performance
+
+### Slug Validation
+```php
+// In Product/Post Request validation
+'slug' => [
+    'required',
+    'string',
+    'max:255',
+    Rule::unique('products', 'slug'),
+    Rule::unique('posts', 'slug'), // Check blog table too
+]
+```
+
+### Important Notes:
+- DO NOT use prefixes like `/product/` or `/blog/`
+- DO NOT use category slugs in URL (e.g., NO `/category/product-slug`)
+- Slugs must be globally unique (check all content types)
+- Use route model binding where possible
+- Always set proper SEO canonical URLs
+
+---
+
+## Feature Modules
+
+### A. Ecommerce Module - Product Management System
+
+**CRITICAL: Product Structure and Variant System**
+
+#### Product Types (4 Types)
+1. **Simple Product** - Single product with one default variant
+2. **Grouped Product** - Bundle of multiple products (each has default variant)
+3. **Affiliate Product** - External product link (one default variant for tracking)
+4. **Variable Product** - Product with multiple variations (size, color, etc.)
+
+#### Core Business Logic: SKU/Variant Based System
+
+**IMPORTANT: All product data (price, stock, shipping) is stored at VARIANT level, NOT product level**
+
+```
+Product Table:
+- id, name, slug, description, category_id, brand_id
+- product_type (simple, grouped, affiliate, variable)
+- status, featured
+- SEO fields (meta_title, meta_description, meta_keywords)
+
+Product Variants Table (THE CORE):
+- id, product_id, sku (UNIQUE)
+- variant_name (e.g., "Red - Large", "Default")
+- is_default (boolean)
+- image_id (single image per variant)
+- price, sale_price, cost_price
+- stock_quantity, low_stock_threshold
+- weight, dimensions (length, width, height)
+- shipping_class_id
+- manage_stock, stock_status
+- status (active/inactive)
+
+Variant Attributes (for variable products):
+- variant_id, attribute_id, attribute_value_id
+```
+
+#### Product Type Specific Rules
+
+**1. Simple Product:**
+- Automatically creates ONE default variant on product creation
+- Variant name: "Default"
+- SKU auto-generated if not provided
+- All pricing, stock, shipping attached to this default variant
+- No attribute management needed
+- Edit price/stock directly (updates default variant behind the scenes)
+
+**2. Grouped Product:**
+- Parent product (container)
+- Contains multiple child products (each is a simple product with default variant)
+- No direct variant management for grouped product itself
+- Display combined stock from all children
+- Pricing shown as range (min to max of children)
+- When sold, deduct from child product variants
+
+**3. Affiliate Product:**
+- Creates ONE default variant for tracking purposes
+- External URL field (redirect to affiliate link)
+- Price shown as "View Price" button
+- No stock management (always "In Stock")
+- Track clicks/conversions via variant_id
+- No shipping details needed
+
+**4. Variable Product:**
+- ONLY this type shows Variation Management System
+- Must create Attributes first (with values)
+- Attributes have sorting order
+- Generate variants automatically or manually
+- Each variant has: unique SKU, price, stock, image, shipping
+- Can enable/disable specific variants
+
+#### Variant Management Workflow (Variable Products Only)
+
+**Step 1: Create/Edit Attributes**
+```
+Attributes Table:
+- id, name, slug, type (select, color, button, image)
+- sort_order (for display order)
+
+Attribute Values:
+- id, attribute_id, value, slug, color_code (if type=color)
+- sort_order
+```
+
+**Step 2: Enable Variation Generation System**
+- Show "Generate Variations" button
+- Two options:
+  a) Auto-generate: Create all possible combinations
+  b) Manual: Add specific combinations only
+- Combination logic: Size X Color = 6 variants (if 3 sizes, 2 colors)
+
+**Step 3: Edit Generated Variants**
+After generation, show variant list with inline editing:
+- SKU (required, unique)
+- Price, Sale Price, Cost Price
+- Stock Quantity
+- Image (single image picker)
+- Weight & Dimensions
+- Shipping Class
+- Status (enable/disable)
+- Bulk edit options (apply to all, selected)
+
+#### Database Schema
+
+```sql
+-- Products Table (Base Info Only)
+CREATE TABLE products (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(255),
+    slug VARCHAR(255) UNIQUE,
+    description TEXT,
+    short_description TEXT,
+    product_type ENUM('simple', 'grouped', 'affiliate', 'variable'),
+    category_id BIGINT,
+    brand_id BIGINT,
+    featured BOOLEAN DEFAULT FALSE,
+    status ENUM('active', 'inactive', 'draft'),
+    affiliate_url VARCHAR(255),
+    affiliate_button_text VARCHAR(100),
+    meta_title VARCHAR(255),
+    meta_description TEXT,
+    meta_keywords VARCHAR(255),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP,
+    INDEX(slug),
+    INDEX(product_type),
+    INDEX(status)
+);
+
+-- Product Variants (THE CORE - All business data here)
+CREATE TABLE product_variants (
+    id BIGINT PRIMARY KEY,
+    product_id BIGINT,
+    sku VARCHAR(100) UNIQUE NOT NULL,
+    variant_name VARCHAR(255),
+    is_default BOOLEAN DEFAULT FALSE,
+    image_id BIGINT,
+    
+    -- Pricing (at variant level)
+    price DECIMAL(10,2) NOT NULL,
+    sale_price DECIMAL(10,2),
+    cost_price DECIMAL(10,2),
+    
+    -- Stock (at variant level)
+    stock_quantity INT DEFAULT 0,
+    low_stock_threshold INT DEFAULT 5,
+    manage_stock BOOLEAN DEFAULT TRUE,
+    stock_status ENUM('in_stock', 'out_of_stock', 'on_backorder'),
+    
+    -- Shipping (at variant level)
+    weight DECIMAL(8,2),
+    length DECIMAL(8,2),
+    width DECIMAL(8,2),
+    height DECIMAL(8,2),
+    shipping_class_id BIGINT,
+    
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_sku (sku),
+    INDEX(product_id),
+    INDEX(sku),
+    INDEX(is_default)
+);
+
+-- Product Gallery (Multiple images at product level)
+CREATE TABLE product_images (
+    id BIGINT PRIMARY KEY,
+    product_id BIGINT,
+    path VARCHAR(255),
+    thumbnail_path VARCHAR(255),
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Attributes (for variable products)
+CREATE TABLE product_attributes (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(100),
+    slug VARCHAR(100),
+    type ENUM('select', 'color', 'button', 'image') DEFAULT 'select',
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP
+);
+
+-- Attribute Values
+CREATE TABLE product_attribute_values (
+    id BIGINT PRIMARY KEY,
+    attribute_id BIGINT,
+    value VARCHAR(100),
+    slug VARCHAR(100),
+    color_code VARCHAR(7),
+    sort_order INT DEFAULT 0,
+    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id) ON DELETE CASCADE
+);
+
+-- Variant Attributes (relationship)
+CREATE TABLE product_variant_attributes (
+    id BIGINT PRIMARY KEY,
+    variant_id BIGINT,
+    attribute_id BIGINT,
+    attribute_value_id BIGINT,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    FOREIGN KEY (attribute_id) REFERENCES product_attributes(id),
+    FOREIGN KEY (attribute_value_id) REFERENCES product_attribute_values(id)
+);
+
+-- Grouped Products (child relationship)
+CREATE TABLE grouped_products (
+    id BIGINT PRIMARY KEY,
+    parent_product_id BIGINT,
+    child_product_id BIGINT,
+    quantity INT DEFAULT 1,
+    sort_order INT DEFAULT 0,
+    FOREIGN KEY (parent_product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (child_product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+```
+
+#### Stock & Financial Transaction Rules
+
+**CRITICAL: All transactions MUST reference variant_id**
+
+```sql
+-- Stock Movements (always use variant_id)
+CREATE TABLE stock_movements (
+    id BIGINT PRIMARY KEY,
+    variant_id BIGINT NOT NULL, -- REQUIRED
+    type ENUM('purchase', 'sale', 'return', 'adjustment', 'damage'),
+    quantity INT,
+    reference_type VARCHAR(50), -- 'order', 'purchase_order', 'manual'
+    reference_id BIGINT,
+    note TEXT,
+    user_id BIGINT,
+    created_at TIMESTAMP,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+    INDEX(variant_id),
+    INDEX(type),
+    INDEX(reference_type, reference_id)
+);
+
+-- Order Items (always use variant_id)
+CREATE TABLE order_items (
+    id BIGINT PRIMARY KEY,
+    order_id BIGINT,
+    variant_id BIGINT NOT NULL, -- REQUIRED (not product_id)
+    product_name VARCHAR(255),
+    variant_name VARCHAR(255),
+    sku VARCHAR(100),
+    quantity INT,
+    unit_price DECIMAL(10,2),
+    subtotal DECIMAL(10,2),
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+    INDEX(variant_id)
+);
+
+-- Purchase Orders (always use variant_id)
+CREATE TABLE purchase_order_items (
+    id BIGINT PRIMARY KEY,
+    purchase_order_id BIGINT,
+    variant_id BIGINT NOT NULL, -- REQUIRED
+    quantity INT,
+    unit_cost DECIMAL(10,2),
+    subtotal DECIMAL(10,2),
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+    INDEX(variant_id)
+);
+
+-- Returns (always use variant_id)
+CREATE TABLE return_items (
+    id BIGINT PRIMARY KEY,
+    return_id BIGINT,
+    order_item_id BIGINT,
+    variant_id BIGINT NOT NULL, -- REQUIRED
+    quantity INT,
+    reason TEXT,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id),
+    INDEX(variant_id)
+);
+```
+
+#### Service Layer Pattern
+
+```php
+// ProductService.php - Auto-create default variant
+public function createProduct(array $data): Product
+{
+    $product = Product::create($data);
+    
+    // Auto-create default variant for simple/grouped/affiliate
+    if (in_array($product->product_type, ['simple', 'grouped', 'affiliate'])) {
+        $this->createDefaultVariant($product, $data);
+    }
+    
+    return $product;
+}
+
+// VariantService.php - Generate variants
+public function generateVariants(Product $product, array $attributes): Collection
+{
+    $combinations = $this->generateCombinations($attributes);
+    
+    foreach ($combinations as $combination) {
+        $this->createVariant($product, $combination);
+    }
+}
+
+// StockService.php - Update stock (CRITICAL: Always log)
+public function updateStock(int $variantId, int $quantity, string $type): void
+{
+    StockMovement::create([
+        'variant_id' => $variantId,
+        'type' => $type,
+        'quantity' => $quantity,
+        'user_id' => auth()->id(),
+    ]);
+    
+    $variant = ProductVariant::findOrFail($variantId);
+    if (in_array($type, ['sale', 'damage'])) {
+        $variant->decrement('stock_quantity', $quantity);
+    } else {
+        $variant->increment('stock_quantity', $quantity);
+    }
+}
+```
+
+#### Admin UI/UX Requirements
+
+**Product Create/Edit Page Structure:**
+
+```
+[Product Information Section]
+- Name, Slug, Description
+- Category, Brand
+- Product Type (Radio: Simple, Grouped, Affiliate, Variable)
+- Featured, Status
+- SEO Fields
+
+[Conditional Sections Based on Product Type]
+
+IF product_type = "simple":
+  [Default Variant Section] (collapsible)
+  - SKU (auto-generated or manual)
+  - Price, Sale Price, Cost Price
+  - Stock Quantity, Low Stock Alert
+  - Image (single image picker)
+  - Weight & Dimensions
+  - Shipping Class
+
+IF product_type = "grouped":
+  [Grouped Products Section]
+  - Search & Add Child Products
+  - List of children with quantities
+  - Drag to reorder
+  - Remove option
+
+IF product_type = "affiliate":
+  [Affiliate Settings]
+  - External URL
+  - Button Text ("Buy Now", "View Product")
+  - Price Display (optional)
+  - Track clicks checkbox
+
+IF product_type = "variable":
+  [Attributes Section]
+  - Button: "Add Attribute"
+  - List of attributes with values
+  - Drag to reorder (affects variant name generation)
+  - Remove option
+  
+  [Variation Management Section]
+  - Button: "Generate Variations"
+  - Options: Auto-generate all / Manual add
+  
+  [Variations List] (after generation)
+  - Table: Image, Variant Name, SKU, Price, Stock, Status
+  - Inline editing for each field
+  - Bulk actions: Edit selected, Delete selected
+  - Expand row to show full details
+```
+
+#### Frontend Display Logic
+
+```php
+// Product card/list view
+if ($product->product_type === 'simple') {
+    $variant = $product->defaultVariant;
+    $price = $variant->sale_price ?? $variant->price;
+    $inStock = $variant->stock_quantity > 0;
+}
+
+if ($product->product_type === 'variable') {
+    $minPrice = $product->variants()->min('price');
+    $maxPrice = $product->variants()->max('price');
+    $priceDisplay = "৳{$minPrice} - ৳{$maxPrice}";
+}
+
+if ($product->product_type === 'grouped') {
+    $minPrice = $product->groupedProducts()->min('variants.price');
+    $maxPrice = $product->groupedProducts()->max('variants.price');
+}
+
+if ($product->product_type === 'affiliate') {
+    $buttonText = $product->affiliate_button_text ?? 'View Product';
+    // Redirect to external URL
+}
+```
+
+#### Important Variant System Notes
+
+1. **NEVER store price/stock at product level** - Always at variant level
+2. **ALWAYS use variant_id in transactions** - Never product_id alone
+3. **Default variant is mandatory** for simple/grouped/affiliate products
+4. **SKU must be globally unique** across all variants
+5. **Stock movements must be logged** for audit trail
+6. **Variant image is single image** - Not multiple (product can have gallery)
+7. **For grouped products** - Calculate totals from children
+8. **Variable products** - Must have at least one active variant to be purchasable
+9. **All sale, purchase, return, change operations** MUST use variant_id for identification
+10. **Financial reports** must calculate from variant-level cost_price vs sale_price
+
+---
+
+### B. Blog Module
+- Post management (CRUD)
+- Category & tags
+- Comments system
+- Author management
+- SEO optimization
+- URL: `domain.com/{blog-slug}` (NO prefix)
+
+---
+
+### C. Stock Management Module
+- Inventory tracking (use variant_id)
+- Stock alerts (low stock) (check variant stock)
+- Stock history (log all movements with variant_id)
+- Purchase orders (reference variant_id)
+- Stock adjustments (manual corrections with variant_id)
+- Supplier management
+
+---
+
+### D. Finance Module
+- Revenue tracking (calculate from order_items.variant_id)
+- Expense management
+- Profit/loss reports (use variant cost_price vs sale_price)
+- Payment records
+- Tax calculations
+
+---
+
+### E. Admin Panel
+- Dashboard with analytics
+- User management
+- Role & permissions (Spatie)
+- Settings management
+- Activity logs (Spatie Activity Log)
+
+---
+
+### F. Landing Pages
+- Dynamic page builder
+- Section management (Hero, Features, Testimonials)
+- Call-to-action management
+
+---
+
+### G. Home Page Management
+- Featured products
+- Banner slider (Swiper - local assets)
+- Category showcase
+- Latest blog posts
+- Promotional sections
+
+---
+
+### H. Admin Global Search System
+
+**CRITICAL: Admin panel must have intelligent search functionality**
+
+#### Search Scope:
+- Pages/Routes (e.g., "Products", "Orders", "Settings")
+- Menu items and sub-menus
+- Settings options
+- Quick actions (e.g., "Add Product", "Create Order")
+- Help documentation
+- Recent activities
+
+#### Search Implementation:
+1. **Search Bar Location**: Top header, always visible
+2. **Search Trigger**: 
+   - Click on search icon
+   - Keyboard shortcut: `Ctrl/Cmd + K`
+3. **Search Type**: Real-time, instant results (Livewire)
+4. **Result Categories**:
+   - পেজ (Pages/Routes)
+   - সেটিংস (Settings)
+   - দ্রুত কাজ (Quick Actions)
+   - সাম্প্রতিক (Recent Items)
+
+#### Searchable Items Configuration Structure:
+```php
+// config/admin-search.php
+return [
+    'pages' => [
+        ['name' => 'পণ্য তালিকা', 'name_en' => 'Products', 'route' => 'admin.products.index', 'icon' => 'box', 'keywords' => 'items inventory'],
+        ['name' => 'অর্ডার', 'name_en' => 'Orders', 'route' => 'admin.orders.index', 'icon' => 'shopping-cart', 'keywords' => 'sales purchases'],
+        ['name' => 'গ্রাহক', 'name_en' => 'Customers', 'route' => 'admin.customers.index', 'icon' => 'users', 'keywords' => 'clients buyers'],
+        ['name' => 'স্টক', 'name_en' => 'Stock', 'route' => 'admin.stock.index', 'icon' => 'package', 'keywords' => 'inventory warehouse'],
+        ['name' => 'আর্থিক', 'name_en' => 'Finance', 'route' => 'admin.finance.index', 'icon' => 'dollar-sign', 'keywords' => 'money revenue'],
+        ['name' => 'ব্লগ', 'name_en' => 'Blog', 'route' => 'admin.blog.index', 'icon' => 'file-text', 'keywords' => 'articles posts'],
+        ['name' => 'ক্যাটাগরি', 'name_en' => 'Categories', 'route' => 'admin.categories.index', 'icon' => 'folder', 'keywords' => 'groups'],
+        ['name' => 'ব্র্যান্ড', 'name_en' => 'Brands', 'route' => 'admin.brands.index', 'icon' => 'tag', 'keywords' => 'manufacturers'],
+        ['name' => 'রিপোর্ট', 'name_en' => 'Reports', 'route' => 'admin.reports.index', 'icon' => 'bar-chart', 'keywords' => 'analytics'],
+    ],
+    'settings' => [
+        ['name' => 'সাধারণ সেটিংস', 'name_en' => 'General Settings', 'route' => 'admin.settings.general', 'icon' => 'settings'],
+        ['name' => 'পেমেন্ট সেটিংস', 'name_en' => 'Payment Settings', 'route' => 'admin.settings.payment', 'icon' => 'credit-card'],
+        ['name' => 'শিপিং সেটিংস', 'name_en' => 'Shipping Settings', 'route' => 'admin.settings.shipping', 'icon' => 'truck'],
+        ['name' => 'SMS সেটিংস', 'name_en' => 'SMS Settings', 'route' => 'admin.settings.sms', 'icon' => 'message-square'],
+        ['name' => 'SEO সেটিংস', 'name_en' => 'SEO Settings', 'route' => 'admin.settings.seo', 'icon' => 'search'],
+        ['name' => 'ইমেইল সেটিংস', 'name_en' => 'Email Settings', 'route' => 'admin.settings.email', 'icon' => 'mail'],
+        ['name' => 'সোশ্যাল লগইন', 'name_en' => 'Social Login', 'route' => 'admin.settings.social', 'icon' => 'share-2'],
+    ],
+    'quick_actions' => [
+        ['name' => 'নতুন পণ্য যোগ করুন', 'name_en' => 'Add New Product', 'route' => 'admin.products.create', 'icon' => 'plus-circle'],
+        ['name' => 'নতুন অর্ডার', 'name_en' => 'Create Order', 'route' => 'admin.orders.create', 'icon' => 'shopping-bag'],
+        ['name' => 'নতুন ব্লগ পোস্ট', 'name_en' => 'New Blog Post', 'route' => 'admin.blog.create', 'icon' => 'edit'],
+        ['name' => 'ক্যাটাগরি যোগ করুন', 'name_en' => 'Add Category', 'route' => 'admin.categories.create', 'icon' => 'folder-plus'],
+        ['name' => 'গ্রাহক যোগ করুন', 'name_en' => 'Add Customer', 'route' => 'admin.customers.create', 'icon' => 'user-plus'],
+    ]
+];
+```
+
+#### Search Algorithm:
+1. Search in Bengali name (primary)
+2. Search in English name (secondary)
+3. Search in keywords field
+4. Search in route name
+5. Fuzzy matching for typos (70% similarity threshold)
+6. Show max 10 results per category
+7. Group by category (Pages, Settings, Actions)
+
+#### UI/UX Requirements:
+- Modal/Dropdown overlay with backdrop
+- Keyboard navigation (↑↓ arrows, Enter to select, Esc to close)
+- Highlight matched text with `<mark>` tag
+- Show category badges
+- Display icons (Lucide icons)
+- Show keyboard shortcuts if available
+- Recent searches memory (last 5)
+- "No results found" message in Bengali: "কোনো ফলাফল পাওয়া যায়নি"
+
+#### Implementation Files:
+```
+app/Services/AdminSearchService.php
+app/Livewire/Admin/GlobalSearch.php
+resources/views/livewire/admin/global-search.blade.php
+config/admin-search.php
+```
+
+#### Keyboard Shortcuts:
+- `Ctrl/Cmd + K`: Open search
+- `Esc`: Close search
+- `↑↓`: Navigate results
+- `Enter`: Go to selected item
+
+#### Search Data Storage:
+- Store in config file (NO database needed)
+- Cache for performance (`config:cache`)
+- Update config when new routes added
+- Recent searches stored in session
+
+#### Bengali Search Support:
+- Must support Bengali Unicode (UTF-8)
+- Phonetic search (optional enhancement)
+- Both Bengali and English keywords searchable
+- Case-insensitive search
+
+---
+
+## When Creating New Features
+
+1. **Plan First**: Outline the feature structure
+2. **Create Migration**: Database schema (with proper indexes)
+3. **Create Model**: With relationships, soft deletes, and traits
+4. **Create Repository**: Database queries
+5. **Create Service**: Business logic
+6. **Create Controller**: HTTP handling (thin controllers)
+7. **Create Request**: Validation rules
+8. **Create Views**: Blade templates (use Livewire if interactive)
+9. **Create Routes**: Named routes
+10. **Write Tests**: Feature tests
+11. **Document**: Add to CHANGELOG.md and inline docs
+12. **Activity Log**: Add logging for important actions
+
+---
+
+## File Naming Conventions
+- Controllers: `ProductController.php`
+- Models: `Product.php`
+- Services: `ProductService.php`
+- Repositories: `ProductRepository.php`
+- Livewire: `SearchProducts.php`
+- Blade views: `kebab-case.blade.php`
+- JS files: `camelCase.js`
+- CSS files: `kebab-case.css`
+
+---
+
+## Git Commit Messages
+```
+feat(module): Add feature description
+fix(module): Fix bug description
+docs(module): Update documentation
+refactor(module): Refactor code
+test(module): Add tests
+style(module): Code formatting
+chore(module): Maintenance tasks
+```
+
+---
+
+## Questions to Ask Before Implementation
+1. Is this feature module-specific or shared?
+2. Does it need Livewire or is Blade sufficient?
+3. What are the database requirements?
+4. Are there security considerations?
+5. Does it need background processing (queues)?
+6. **Does this create new URLs? Ensure slug uniqueness across all content types**
+7. **For product features: Which product type(s) does this apply to?**
+8. **Does this involve stock/financial data? Always use variant_id**
+9. **Does this column already exist with a different name?**
+
+---
+
+## Reference Screenshots
+When user provides screenshots:
+1. Analyze layout structure
+2. Identify components
+3. Note interactive elements
+4. List required features
+5. Suggest implementation approach
+6. Check if similar UI components already exist
+7. Maintain consistency with existing theme
+
+---
+
+## Validation Message Standards
+
+### Bengali Error Messages:
+```php
+// Example validation messages
+'name.required' => 'নাম আবশ্যক',
+'email.required' => 'ইমেইল আবশ্যক',
+'email.email' => 'বৈধ ইমেইল প্রদান করুন',
+'price.required' => 'মূল্য আবশ্যক',
+'price.numeric' => 'মূল্য সংখ্যা হতে হবে',
+'sku.unique' => 'এই SKU ইতিমধ্যে ব্যবহৃত হয়েছে',
+'stock_quantity.min' => 'স্টক পরিমাণ ০ বা তার বেশি হতে হবে',
+```
+
+### Success Messages:
+```php
+'product_created' => 'পণ্য সফলভাবে তৈরি হয়েছে',
+'product_updated' => 'পণ্য সফলভাবে আপডেট হয়েছে',
+'product_deleted' => 'পণ্য সফলভাবে মুছে ফেলা হয়েছে',
+'order_placed' => 'অর্ডার সফলভাবে সম্পন্ন হয়েছে',
+```
+
+---
+
+## API Response Standards
+
+### Success Response:
+```json
+{
+    "success": true,
+    "message": "Operation completed successfully",
+    "data": {
+        "id": 123,
+        "name": "Product Name"
+    }
+}
+```
+
+### Error Response:
+```json
+{
+    "success": false,
+    "message": "Validation failed",
+    "errors": {
+        "email": ["The email field is required."]
+    }
+}
+```
+
+### Paginated Response:
+```json
+{
+    "success": true,
+    "message": "Data fetched successfully",
+    "data": {
+        "items": [...],
+        "pagination": {
+            "current_page": 1,
+            "per_page": 10,
+            "total": 145,
+            "last_page": 15,
+            "from": 1,
+            "to": 10
+        }
+    }
+}
+```
+
+---
+
+## Environment Variables Template
+
+### Required .env Variables:
+```env
+APP_NAME="Your Ecommerce"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+PAGINATE=10
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ecommerce_db
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Social Login
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URL="${APP_URL}/auth/google/callback"
+
+FACEBOOK_CLIENT_ID=
+FACEBOOK_CLIENT_SECRET=
+FACEBOOK_REDIRECT_URL="${APP_URL}/auth/facebook/callback"
+
+# SMS Gateway (Twilio)
+TWILIO_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Payment Gateway
+SSLCOMMERZ_STORE_ID=
+SSLCOMMERZ_STORE_PASSWORD=
+SSLCOMMERZ_SANDBOX=true
+
+# Mail
+MAIL_MAILER=smtp
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=tls
+
+# Activity Log
+ACTIVITY_LOG_ENABLED=true
+```
+
+---
+
+## Testing Guidelines
+
+### Feature Test Example:
+```php
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use App\Modules\Ecommerce\Product\Models\Product;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+class ProductTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function user_can_view_product_list()
+    {
+        Product::factory()->count(5)->create();
+        
+        $response = $this->get(route('products.index'));
+        
+        $response->assertStatus(200);
+        $response->assertViewHas('products');
+    }
+
+    /** @test */
+    public function simple_product_creates_default_variant()
+    {
+        $product = Product::factory()->create([
+            'product_type' => 'simple',
+        ]);
+        
+        $this->assertNotNull($product->defaultVariant);
+        $this->assertEquals('Default', $product->defaultVariant->variant_name);
+        $this->assertTrue($product->defaultVariant->is_default);
+    }
+
+    /** @test */
+    public function variant_id_is_required_in_order_items()
+    {
+        $this->expectException(\Exception::class);
+        
+        OrderItem::create([
+            'order_id' => 1,
+            // Missing variant_id - should fail
+            'quantity' => 1,
+        ]);
+    }
+}
+```
+
+---
+
+## Performance Optimization Rules
+
+1. **Eager Loading**: Always use `with()` to prevent N+1 queries
+```php
+// ✅ Good
+$products = Product::with(['category', 'variants', 'images'])->get();
+
+// ❌ Bad - N+1 problem
+$products = Product::all();
+foreach ($products as $product) {
+    echo $product->category->name; // N+1 query
+}
+```
+
+2. **Query Optimization**: Use `select()` to load only required columns
+```php
+Product::select('id', 'name', 'slug', 'price')->get();
+```
+
+3. **Caching**: Cache frequently accessed data
+```php
+$categories = Cache::remember('categories', 3600, function () {
+    return Category::with('children')->get();
+});
+```
+
+4. **Indexes**: Always index foreign keys and frequently queried columns
+
+5. **Queue Jobs**: Use queues for heavy operations (email, SMS, image processing)
+```php
+ProcessOrderNotification::dispatch($order)->delay(now()->addSeconds(10));
+```
+
+---
+
+## Security Checklist
+
+- [ ] All user inputs validated via Form Requests
+- [ ] SQL injection prevention (use Eloquent/Query Builder)
+- [ ] XSS prevention (Blade auto-escapes, use `{!! !!}` carefully)
+- [ ] CSRF protection (enabled by default)
+- [ ] Rate limiting on authentication routes
+- [ ] File upload validation (type, size, extension)
+- [ ] Sanitize HTML content (blog posts) using HTMLPurifier
+- [ ] Use `bcrypt` or `Hash::make()` for passwords
+- [ ] Implement role-based access control (Spatie Permission)
+- [ ] Log all sensitive actions (activity log)
+- [ ] Use HTTPS in production
+- [ ] Environment variables for sensitive data
+- [ ] Database backups scheduled
+
+---
+
+## Deployment Checklist
+
+### Before Deployment:
+- [ ] Run tests: `php artisan test`
+- [ ] Clear and cache config: `php artisan config:cache`
+- [ ] Clear and cache routes: `php artisan route:cache`
+- [ ] Clear and cache views: `php artisan view:cache`
+- [ ] Optimize autoloader: `composer install --optimize-autoloader --no-dev`
+- [ ] Build frontend assets: `npm run build`
+- [ ] Set `APP_DEBUG=false` in production
+- [ ] Set `APP_ENV=production`
+- [ ] Generate application key (if new): `php artisan key:generate`
+- [ ] Run migrations: `php artisan migrate --force`
+- [ ] Link storage: `php artisan storage:link`
+- [ ] Set proper file permissions
+
+### After Deployment:
+- [ ] Verify all routes working
+- [ ] Check database connections
+- [ ] Test payment gateway
+- [ ] Test SMS sending
+- [ ] Test email sending
+- [ ] Monitor error logs
+- [ ] Set up database backups
+- [ ] Set up SSL certificate
+- [ ] Configure queue workers
+- [ ] Set up scheduled tasks (cron jobs)
+
+---
+
+## Common Artisan Commands Reference
+
+```bash
+# Development
+php artisan serve
+php artisan migrate
+php artisan migrate:fresh --seed
+php artisan db:seed
+
+# Generate files
+php artisan make:model Product -m
+php artisan make:controller ProductController --resource
+php artisan make:request StoreProductRequest
+php artisan make:migration create_products_table
+php artisan make:factory ProductFactory
+php artisan make:seeder ProductSeeder
+php artisan make:livewire Product/SearchProducts
+
+# Cache management
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan cache:clear
+php artisan optimize:clear
+
+# Queue
+php artisan queue:work
+php artisan queue:listen
+php artisan queue:restart
+
+# Testing
+php artisan test
+php artisan test --filter ProductTest
+
+# Database
+php artisan tinker
+php artisan migrate:rollback
+php artisan migrate:status
+
+# Storage
+php artisan storage:link
+
+# Activity log
+php artisan activitylog:clean
+```
+
+---
+
+## Documentation Files Required
+
+### Project root documentation:
+- `README.md` - Project overview, setup instructions
+- `CHANGELOG.md` - Version history and changes
+- `.windsurfrules` - This file (AI guidelines)
+- `DEVELOPMENT.md` - Detailed development guide
+
+### Documentation folder (`/development-docs`):
+- `/development-docs/database-schema.md` - Database structure
+- `/development-docs/api-documentation.md` - API endpoints
+- `/development-docs/ui-ux-guidelines.md` - Design system
+- `/development-docs/delete-rules.md` - Soft delete standards
+- `/development-docs/deployment.md` - Deployment instructions
+
+---
+
+## Critical Reminders
+
+**NEVER:**
+- Use CDN for CSS/JS
+- Store price/stock at product level (always variant level)
+- Use product_id in transactions (always variant_id)
+- Hard delete important data (use soft deletes)
+- Mix inline styles with Tailwind classes
+- Create duplicate UI components
+- Skip validation on user input
+- Expose sensitive data in API responses
+- Use `get()` or `all()` without pagination on large datasets
+- Create new columns without checking for existing alternatives first
+
+**ALWAYS:**
+- Install packages locally (npm/composer)
+- Use variant_id for all stock/financial operations
+- Log important actions (activity log)
+- Follow module-based structure
+- Document code with proper comments
+- Write feature tests for critical flows
+- Use Form Requests for validation
+- Implement soft deletes on business data
+- Check slug uniqueness across all content types
+- Maintain UI/UX consistency
+- Follow PSR-12 coding standards
+- Use Bengali for user-facing messages
+- Check existing table schema before creating new columns or migrations
+- Verify column name alternatives before adding new migrations
+
+---
+
+**deploymnet docs:**
+- update pending-deployment.md file with all pending migrations and seeders .
+
+
+
+**Remember**: This project prioritizes clean, maintainable, and well-documented code. Always think about future developers who will work on this codebase. Every decision should make the codebase easier to understand and extend.

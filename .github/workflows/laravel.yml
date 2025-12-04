@@ -1,0 +1,53 @@
+name: 🚀 Auto Deploy Laravel to FTP (Hardcoded Local Use)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          npm ci && npm run build
+          
+      - name: 📦 Publish Livewire Assets
+        run: |
+          php artisan livewire:publish --assets
+          
+      - name: 🧹 Prepare Laravel for Production
+        run: |
+          php artisan key:generate || true
+          php artisan config:cache || true
+          php artisan route:cache || true
+          php artisan view:cache || true
+          
+          php artisan cache:clear || true
+          php artisan config:clear || true
+          php artisan optimize:clear || true
+          
+          php artisan storage:link || true
+
+      - name: 🚀 Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: host13.registrar-servers.comffff          # <- Your domain
+          username: deploy@alamgiralam.comffff            # <- Your FTP username
+          password: 'dY7!39KBw@Zg'    # <- Paste it locally, not in GitHub
+          protocol: ftp
+          port: 21
+          local-dir: ./
+          server-dir: /
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/.env
+            **/public/storage/**
