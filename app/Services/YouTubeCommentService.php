@@ -356,6 +356,7 @@ class YouTubeCommentService
         $sentimentThreshold = (float) SiteSetting::get('youtube_sentiment_threshold', '0.6');
         $importPositiveOnly = SiteSetting::get('youtube_import_positive_only', '0') === '1';
 
+
         // Report initial progress
         if ($progressCallback) {
             $progressCallback([
@@ -383,12 +384,15 @@ class YouTubeCommentService
             $comments = $this->fetchVideoComments($videoId, $maxResults);
 
             foreach ($comments as $commentData) {
-                // Apply sentiment filtering if enabled
-                if ($sentimentEnabled && $importPositiveOnly) {
-                    $commentText = $commentData['snippet']['topLevelComment']['snippet']['textDisplay'] ?? '';
+                $commentText = $commentData['snippet']['topLevelComment']['snippet']['textDisplay'] ?? $commentData['comment_text'];
 
+                // Apply sentiment filtering ONLY if both enabled AND positive-only are true
+                $shouldFilter = $sentimentEnabled && $importPositiveOnly;
+
+                if ($shouldFilter) {
                     // Analyze sentiment
                     $sentimentResult = $this->sentimentService->analyze($commentText, $sentimentMethod);
+
 
                     // Filter out non-positive comments
                     if ($sentimentResult['score'] < $sentimentThreshold) {

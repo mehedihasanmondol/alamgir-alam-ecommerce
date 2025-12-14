@@ -391,25 +391,37 @@ class SentimentAnalysisService
     }
 
     /**
-     * Get all positive keywords (default + custom)
+     * Get all positive keywords (default + custom) for both languages
      */
     private function getAllPositiveKeywords(string $language): array
     {
         $defaultKeywords = $language === 'bn' ? $this->banglaPositiveKeywords : $this->englishPositiveKeywords;
+
+        // Get custom keywords for detected language
         $customKeywords = $this->getCustomPositiveKeywords($language);
 
-        return array_merge($defaultKeywords, $customKeywords);
+        // Also check the other language's custom keywords (for romanized Bangla in English)
+        $otherLanguage = $language === 'bn' ? 'en' : 'bn';
+        $otherCustomKeywords = $this->getCustomPositiveKeywords($otherLanguage);
+
+        return array_merge($defaultKeywords, $customKeywords, $otherCustomKeywords);
     }
 
     /**
-     * Get all negative keywords (default + custom)
+     * Get all negative keywords (default + custom) for both languages
      */
     private function getAllNegativeKeywords(string $language): array
     {
         $defaultKeywords = $language === 'bn' ? $this->banglaNegativeKeywords : $this->englishNegativeKeywords;
+
+        // Get custom keywords for detected language
         $customKeywords = $this->getCustomNegativeKeywords($language);
 
-        return array_merge($defaultKeywords, $customKeywords);
+        // Also check the other language's custom keywords (for romanized Bangla in English)
+        $otherLanguage = $language === 'bn' ? 'en' : 'bn';
+        $otherCustomKeywords = $this->getCustomNegativeKeywords($otherLanguage);
+
+        return array_merge($defaultKeywords, $customKeywords, $otherCustomKeywords);
     }
 
     /**
@@ -417,7 +429,15 @@ class SentimentAnalysisService
      */
     public function analyzeKeywordBased(string $text): array
     {
+        // Decode HTML entities (e.g., &quot; to ", &#39; to ')
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Strip HTML tags
+        $text = strip_tags($text);
+
+        // Convert to lowercase for matching
         $text = mb_strtolower($text);
+
         $language = $this->detectLanguage($text);
 
         // Use merged keywords (default + custom)
@@ -427,27 +447,38 @@ class SentimentAnalysisService
         $positiveCount = 0;
         $negativeCount = 0;
 
+        $matchedPositive = [];
+        $matchedNegative = [];
+
         // Count positive keywords
         foreach ($positiveKeywords as $keyword) {
-            if (mb_strpos($text, mb_strtolower($keyword)) !== false) {
+            $keywordLower = mb_strtolower($keyword);
+            if (mb_strpos($text, $keywordLower) !== false) {
                 $positiveCount++;
+                $matchedPositive[] = $keyword;
             }
         }
 
         // Count negative keywords
         foreach ($negativeKeywords as $keyword) {
-            if (mb_strpos($text, mb_strtolower($keyword)) !== false) {
+            $keywordLower = mb_strtolower($keyword);
+            if (mb_strpos($text, $keywordLower) !== false) {
                 $negativeCount++;
+                $matchedNegative[] = $keyword;
             }
         }
 
         // Calculate sentiment score (0 to 1)
         $totalKeywords = $positiveCount + $negativeCount;
         if ($totalKeywords === 0) {
-            $score = 0.5; // Neutral if no keywords found
+            // No keywords found - treat as neutral
+            $score = 0.5;
             $label = 'neutral';
         } else {
+            // Calculate score based on positive vs negative ratio
             $score = $positiveCount / $totalKeywords;
+
+            // Determine label based on score
             if ($score >= 0.6) {
                 $label = 'positive';
             } elseif ($score <= 0.4) {
@@ -457,6 +488,18 @@ class SentimentAnalysisService
             }
         }
 
+        // Log for debugging
+        Log::info('Sentiment Analysis Detail', [
+            'original_text' => mb_substr($text, 0, 100),
+            'language' => $language,
+            'positive_count' => $positiveCount,
+            'negative_count' => $negativeCount,
+            'matched_positive' => implode(', ', $matchedPositive),
+            'matched_negative' => implode(', ', $matchedNegative),
+            'score' => round($score, 2),
+            'label' => $label,
+        ]);
+
         return [
             'score' => round($score, 2),
             'label' => $label,
@@ -464,6 +507,8 @@ class SentimentAnalysisService
             'method' => 'keyword',
             'positive_keywords' => $positiveCount,
             'negative_keywords' => $negativeCount,
+            'matched_positive' => $matchedPositive,
+            'matched_negative' => $matchedNegative,
         ];
     }
 
