@@ -35,10 +35,10 @@ use Illuminate\Support\Facades\Route;
  */
 
 Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // Dashboard - Accessible to all admin panel users
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // User Management Routes - Only Super Admin
     Route::middleware(['permission:users.view'])->group(function () {
         Route::resource('users', UserController::class);
@@ -50,7 +50,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
     Route::middleware(['permission:roles.view'])->group(function () {
         Route::resource('roles', RoleController::class);
     });
-    
+
     // Category Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::resource('categories', CategoryController::class);
@@ -59,7 +59,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('categories/{category}/duplicate', [CategoryController::class, 'duplicate'])
             ->name('categories.duplicate');
     });
-    
+
     // Brand Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::resource('brands', BrandController::class);
@@ -70,7 +70,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('brands/{brand}/duplicate', [BrandController::class, 'duplicate'])
             ->name('brands.duplicate');
     });
-    
+
     // Order Management Routes - Requires order permissions
     Route::middleware(['permission:orders.view'])->group(function () {
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
@@ -89,11 +89,11 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])
             ->name('orders.invoice');
     });
-    
+
     // Customer Management Routes
     Route::post('customers/{id}/update-info', [CustomerController::class, 'updateInfo'])
         ->name('customers.update-info');
-    
+
     // Trending Products Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::get('trending-products/search', [TrendingProductController::class, 'searchProducts'])->name('trending-products.search');
@@ -105,7 +105,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('trending-products/update-title', [TrendingProductController::class, 'updateSectionTitle'])->name('trending-products.update-title');
         Route::delete('trending-products/{trendingProduct}', [TrendingProductController::class, 'destroy'])->name('trending-products.destroy');
     });
-    
+
     // Best Seller Products Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::get('best-seller-products/search', [BestSellerProductController::class, 'searchProducts'])->name('best-seller-products.search');
@@ -117,7 +117,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('best-seller-products/update-title', [BestSellerProductController::class, 'updateSectionTitle'])->name('best-seller-products.update-title');
         Route::delete('best-seller-products/{bestSellerProduct}', [BestSellerProductController::class, 'destroy'])->name('best-seller-products.destroy');
     });
-    
+
     // New Arrival Products Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::get('new-arrival-products/search', [NewArrivalProductController::class, 'searchProducts'])->name('new-arrival-products.search');
@@ -129,7 +129,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('new-arrival-products/update-title', [NewArrivalProductController::class, 'updateSectionTitle'])->name('new-arrival-products.update-title');
         Route::delete('new-arrival-products/{newArrivalProduct}', [NewArrivalProductController::class, 'destroy'])->name('new-arrival-products.destroy');
     });
-    
+
     // Product Q&A Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::resource('product-questions', ProductQuestionController::class);
@@ -139,7 +139,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('answers/{id}/reject', [ProductQuestionController::class, 'rejectAnswer'])->name('answers.reject');
         Route::post('answers/{id}/best', [ProductQuestionController::class, 'markBestAnswer'])->name('answers.best');
     });
-    
+
     // Product Review Management Routes - Requires product permissions
     Route::middleware(['permission:products.view'])->group(function () {
         Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
@@ -151,7 +151,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('reviews/bulk-approve', [ReviewController::class, 'bulkApprove'])->name('reviews.bulk-approve');
         Route::post('reviews/bulk-delete', [ReviewController::class, 'bulkDelete'])->name('reviews.bulk-delete');
     });
-    
+
     // Footer Management Routes - Only Super Admin
     Route::middleware(['permission:users.view'])->group(function () {
         Route::get('footer-management', [FooterManagementController::class, 'index'])->name('footer-management.index');
@@ -163,7 +163,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('footer-management/blog-posts', [FooterManagementController::class, 'storeBlogPost'])->name('footer-management.store-blog');
         Route::delete('footer-management/blog-posts/{blogPost}', [FooterManagementController::class, 'deleteBlogPost'])->name('footer-management.delete-blog');
     });
-    
+
     // Blog Tick Marks Management Routes - Accessible to authors (posts.view permission)
     Route::middleware(['permission:posts.view'])->prefix('blog')->name('blog.')->group(function () {
         Route::resource('tick-marks', TickMarkController::class);
@@ -172,29 +172,40 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('tick-marks/update-sort-order', [TickMarkController::class, 'updateSortOrder'])
             ->name('tick-marks.update-sort-order');
     });
-    
+
     // Feedback Management Routes - Requires feedback permissions
     Route::middleware(['permission:feedback.view'])->prefix('feedback')->name('feedback.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('index');
+
+        // YouTube Import Routes - MUST be before {feedback} route to avoid conflicts
+        Route::get('youtube', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'index'])->name('youtube.index');
+        Route::get('youtube/setup', [\App\Http\Controllers\Admin\YouTubeSetupController::class, 'index'])->name('youtube.setup');
+        Route::put('youtube/settings', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'updateSettings'])->name('youtube.update-settings');
+        Route::post('youtube/test', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'testConnection'])->name('youtube.test');
+        Route::post('youtube/import', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'import'])->name('youtube.import');
+        Route::get('youtube/import-progress', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'importProgress'])->name('youtube.import-progress');
+        Route::get('youtube/history', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'importHistory'])->name('youtube.history');
+
+        // Single feedback route - must be after specific routes like 'youtube'
         Route::get('{feedback}', [\App\Http\Controllers\Admin\FeedbackController::class, 'show'])->name('show');
-        
+
         Route::middleware(['permission:feedback.approve'])->group(function () {
             Route::post('{feedback}/approve', [\App\Http\Controllers\Admin\FeedbackController::class, 'approve'])->name('approve');
         });
-        
+
         Route::middleware(['permission:feedback.reject'])->group(function () {
             Route::post('{feedback}/reject', [\App\Http\Controllers\Admin\FeedbackController::class, 'reject'])->name('reject');
         });
-        
+
         Route::middleware(['permission:feedback.feature'])->group(function () {
             Route::post('{feedback}/feature', [\App\Http\Controllers\Admin\FeedbackController::class, 'toggleFeature'])->name('feature');
         });
-        
+
         Route::middleware(['permission:feedback.delete'])->group(function () {
             Route::delete('{feedback}', [\App\Http\Controllers\Admin\FeedbackController::class, 'destroy'])->name('destroy');
         });
     });
-    
+
     // Appointment Management Routes
     Route::middleware(['permission:appointments.view'])->prefix('appointments')->name('appointments.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\AppointmentController::class, 'index'])->name('index');
@@ -210,25 +221,25 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::post('/{chamber}/toggle-status', [\App\Http\Controllers\Admin\ChamberController::class, 'toggleStatus'])->name('toggle-status');
         Route::delete('/{chamber}', [\App\Http\Controllers\Admin\ChamberController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Delivery Management Routes - Requires order permissions
     Route::middleware(['permission:orders.view'])->prefix('delivery')->name('delivery.')->group(function () {
         // Delivery Zones
         Route::resource('zones', DeliveryZoneController::class);
         Route::post('zones/{zone}/toggle-status', [DeliveryZoneController::class, 'toggleStatus'])
             ->name('zones.toggle-status');
-        
+
         // Delivery Methods
         Route::resource('methods', DeliveryMethodController::class);
         Route::post('methods/{method}/toggle-status', [DeliveryMethodController::class, 'toggleStatus'])
             ->name('methods.toggle-status');
-        
+
         // Delivery Rates
         Route::resource('rates', DeliveryRateController::class);
         Route::post('rates/{rate}/toggle-status', [DeliveryRateController::class, 'toggleStatus'])
             ->name('rates.toggle-status');
     });
-    
+
     // Coupon Management Routes - Requires order permissions
     Route::middleware(['permission:orders.view'])->group(function () {
         Route::get('coupons', [AdminCouponController::class, 'index'])->name('coupons.index');
@@ -236,7 +247,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::get('coupons/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('coupons.edit');
         Route::get('coupons/{coupon}/statistics', [AdminCouponController::class, 'statistics'])->name('coupons.statistics');
     });
-    
+
     // Site Settings Routes - Only Super Admin
     Route::middleware(['permission:users.view'])->group(function () {
         Route::get('site-settings', [SiteSettingController::class, 'index'])->name('site-settings.index');
@@ -244,12 +255,12 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::put('site-settings/{group}', [SiteSettingController::class, 'updateGroup'])->name('site-settings.update-group');
         Route::post('site-settings/remove-logo', [SiteSettingController::class, 'removeLogo'])->name('site-settings.remove-logo');
     });
-    
+
     // System Settings Routes - Requires system settings permission
     Route::middleware(['permission:system.settings.view'])->group(function () {
         Route::get('system-settings', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('system-settings.index');
     });
-    
+
     // Stock Management Routes - Requires stock permissions
     Route::middleware(['permission:stock.view'])->prefix('stock')->name('stock.')->group(function () {
         Route::get('/', [\App\Modules\Stock\Controllers\StockController::class, 'index'])->name('index');
@@ -286,7 +297,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::get('/inventory', [\App\Http\Controllers\Admin\ReportController::class, 'inventory'])->name('inventory');
         Route::get('/customers', [\App\Http\Controllers\Admin\ReportController::class, 'customers'])->name('customers');
         Route::get('/delivery', [\App\Http\Controllers\Admin\ReportController::class, 'delivery'])->name('delivery');
-        
+
         // Export routes
         Route::get('/export/sales-pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportSalesPdf'])->name('export-sales-pdf');
         Route::get('/export/inventory-pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportInventoryPdf'])->name('export-inventory-pdf');

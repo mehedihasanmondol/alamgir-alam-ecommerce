@@ -75,4 +75,32 @@ return [
         'api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Natural Language API
+    |--------------------------------------------------------------------------
+    |
+    | API key for Google Cloud Natural Language API for sentiment analysis
+    |
+    */
+
+    'google' => array_merge(config('services.google', []), [
+        'natural_language_api_key' => env('GOOGLE_NATURAL_LANGUAGE_API_KEY'),
+    ]),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sentiment Analysis Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for sentiment analysis service
+    | method: 'keyword' or 'ml' (machine learning)
+    |
+    */
+
+    'sentiment' => [
+        'method' => env('SENTIMENT_ANALYSIS_METHOD', 'keyword'), // 'keyword' or 'ml'
+        'threshold' => env('SENTIMENT_POSITIVE_THRESHOLD', 0.6), // 0.0 to 1.0
+    ],
+
 ];

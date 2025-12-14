@@ -931,6 +931,159 @@ class SiteSettingSeeder extends Seeder
         foreach ($appointmentSettings as $setting) {
             $this->upsertSetting($setting);
         }
+
+        // YouTube Feedback Import Settings
+        $youtubeFeedbackSettings = [
+            [
+                'key' => 'youtube_api_key',
+                'value' => '',
+                'type' => 'password',
+                'group' => 'feedback_sites',
+                'label' => 'YouTube API Key',
+                'description' => 'YouTube Data API v3 key from Google Cloud Console. Required for importing comments.',
+                'order' => 1,
+            ],
+            [
+                'key' => 'youtube_channel_id',
+                'value' => '',
+                'type' => 'text',
+                'group' => 'feedback_sites',
+                'label' => 'YouTube Channel ID',
+                'description' => 'Your YouTube channel ID (found in YouTube Studio > Customization > Basic Info)',
+                'order' => 2,
+            ],
+            [
+                'key' => 'youtube_import_enabled',
+                'value' => '0',
+                'type' => 'boolean',
+                'group' => 'feedback_sites',
+                'label' => 'Enable YouTube Import',
+                'description' => 'Enable automatic daily import of YouTube comments as feedback',
+                'order' => 3,
+            ],
+            [
+                'key' => 'youtube_auto_approve',
+                'value' => '0',
+                'type' => 'boolean',
+                'group' => 'feedback_sites',
+                'label' => 'Auto-Approve YouTube Comments',
+                'description' => 'Automatically approve imported YouTube comments (if disabled, comments remain pending for manual review)',
+                'order' => 4,
+            ],
+            [
+                'key' => 'youtube_default_rating',
+                'value' => '5',
+                'type' => 'number',
+                'group' => 'feedback_sites',
+                'label' => 'Default Rating for YouTube Comments',
+                'description' => 'Star rating to assign to imported YouTube comments (1-5)',
+                'order' => 5,
+            ],
+            [
+                'key' => 'youtube_max_results',
+                'value' => '100',
+                'type' => 'number',
+                'group' => 'feedback_sites',
+                'label' => 'Max Comments Per Import',
+                'description' => 'Maximum number of comments to import per video',
+                'order' => 6,
+            ],
+            [
+                'key' => 'youtube_sentiment_enabled',
+                'value' => '0',
+                'type' => 'boolean',
+                'group' => 'feedback_sites',
+                'label' => 'Enable Sentiment Filtering',
+                'description' => 'Filter comments based on sentiment analysis',
+                'order' => 7,
+            ],
+            [
+                'key' => 'youtube_sentiment_method',
+                'value' => 'keyword',
+                'type' => 'select',
+                'group' => 'feedback_sites',
+                'label' => 'Sentiment Analysis Method',
+                'description' => 'Choose between keyword-based or ML-based analysis',
+                'options' => json_encode(['keyword' => 'Keyword-Based (Fast)', 'ml' => 'ML-Based (Accurate)']),
+                'order' => 8,
+            ],
+            [
+                'key' => 'youtube_sentiment_threshold',
+                'value' => '0.6',
+                'type' => 'number',
+                'group' => 'feedback_sites',
+                'label' => 'Positive Sentiment Threshold',
+                'description' => 'Minimum score (0-1) to consider comment as positive',
+                'order' => 9,
+            ],
+            [
+                'key' => 'youtube_import_positive_only',
+                'value' => '0',
+                'type' => 'boolean',
+                'group' => 'feedback_sites',
+                'label' => 'Import Positive Comments Only',
+                'description' => 'Only import comments with positive sentiment',
+                'order' => 10,
+            ],
+            [
+                'key' => 'sentiment_custom_positive_bangla',
+                'value' => '',
+                'type' => 'textarea',
+                'group' => 'feedback_sites',
+                'label' => 'Custom Positive Keywords (Bangla)',
+                'description' => 'Comma-separated list of custom Bangla positive keywords',
+                'order' => 11,
+            ],
+            [
+                'key' => 'sentiment_custom_positive_english',
+                'value' => '',
+                'type' => 'textarea',
+                'group' => 'feedback_sites',
+                'label' => 'Custom Positive Keywords (English)',
+                'description' => 'Comma-separated list of custom English positive keywords',
+                'order' => 12,
+            ],
+            [
+                'key' => 'sentiment_custom_negative_bangla',
+                'value' => '',
+                'type' => 'textarea',
+                'group' => 'feedback_sites',
+                'label' => 'Custom Negative Keywords (Bangla)',
+                'description' => 'Comma-separated list of custom Bangla negative keywords',
+                'order' => 13,
+            ],
+            [
+                'key' => 'sentiment_custom_negative_english',
+                'value' => '',
+                'type' => 'textarea',
+                'group' => 'feedback_sites',
+                'label' => 'Custom Negative Keywords (English)',
+                'description' => 'Comma-separated list of custom English negative keywords',
+                'order' => 14,
+            ],
+            [
+                'key' => 'youtube_last_import',
+                'value' => '',
+                'type' => 'readonly',
+                'group' => 'feedback_sites',
+                'label' => 'Last Import',
+                'description' => 'Timestamp of the last successful YouTube comment import',
+                'order' => 7,
+            ],
+            [
+                'key' => 'youtube_last_import_count',
+                'value' => '0',
+                'type' => 'readonly',
+                'group' => 'feedback_sites',
+                'label' => 'Last Import Count',
+                'description' => 'Number of comments imported in the last run',
+                'order' => 8,
+            ],
+        ];
+
+        foreach ($youtubeFeedbackSettings as $setting) {
+            $this->upsertSetting($setting);
+        }
     }
 
     /**
@@ -952,9 +1105,9 @@ class SiteSettingSeeder extends Seeder
 
             foreach ($settingData as $field => $newValue) {
                 if (in_array($field, $excludeFields)) continue;
-                
+
                 $oldValue = $existing->{$field};
-                
+
                 // Compare metadata fields only
                 if ($oldValue != $newValue) {
                     $needsUpdate = true;

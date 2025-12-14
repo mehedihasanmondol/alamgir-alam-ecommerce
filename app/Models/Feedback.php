@@ -33,6 +33,9 @@ class Feedback extends Model
         'rating',
         'title',
         'feedback',
+        'source',
+        'source_reference_id',
+        'source_metadata',
         'images',
         'status',
         'is_featured',
@@ -45,6 +48,7 @@ class Feedback extends Model
     protected $casts = [
         'rating' => 'integer',
         'images' => 'array',
+        'source_metadata' => 'array',
         'is_featured' => 'boolean',
         'helpful_count' => 'integer',
         'not_helpful_count' => 'integer',
@@ -184,7 +188,7 @@ class Feedback extends Model
         if ($this->user) {
             return $this->user->name;
         }
-        
+
         return $this->customer_name ?? 'Guest';
     }
 
@@ -194,12 +198,82 @@ class Feedback extends Model
     public function getFormattedMobileAttribute(): string
     {
         $mobile = $this->customer_mobile;
-        
+
         // Mask middle digits for privacy
         if (strlen($mobile) >= 8) {
             return substr($mobile, 0, 3) . '****' . substr($mobile, -3);
         }
-        
+
         return $mobile;
+    }
+
+    /**
+     * Scope: Filter by source
+     */
+    public function scopeBySource($query, string $source)
+    {
+        return $query->where('source', $source);
+    }
+
+    /**
+     * Scope: Get YouTube feedback
+     */
+    public function scopeFromYoutube($query)
+    {
+        return $query->where('source', 'youtube');
+    }
+
+    /**
+     * Scope: Get manual feedback
+     */
+    public function scopeManual($query)
+    {
+        return $query->where('source', 'manual');
+    }
+
+    /**
+     * Check if feedback is from YouTube
+     */
+    public function isFromYoutube(): bool
+    {
+        return $this->source === 'youtube';
+    }
+
+    /**
+     * Get formatted source name
+     */
+    public function getSourceLabelAttribute(): string
+    {
+        return ucfirst($this->source);
+    }
+
+    /**
+     * Get YouTube video title from metadata
+     */
+    public function getYoutubeVideoTitleAttribute(): ?string
+    {
+        return $this->source_metadata['video_title'] ?? null;
+    }
+
+    /**
+     * Get YouTube video ID from metadata
+     */
+    public function getYoutubeVideoIdAttribute(): ?string
+    {
+        return $this->source_metadata['video_id'] ?? null;
+    }
+
+    /**
+     * Get YouTube comment URL
+     */
+    public function getYoutubeCommentUrlAttribute(): ?string
+    {
+        if ($this->isFromYoutube() && $this->source_reference_id) {
+            $videoId = $this->youtube_video_id;
+            $commentId = $this->source_reference_id;
+            return "https://www.youtube.com/watch?v={$videoId}&lc={$commentId}";
+        }
+
+        return null;
     }
 }
