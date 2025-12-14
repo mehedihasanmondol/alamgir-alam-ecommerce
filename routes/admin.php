@@ -182,6 +182,7 @@ Route::middleware(['auth', 'admin.access'])->prefix('admin')->name('admin.')->gr
         Route::get('youtube/setup', [\App\Http\Controllers\Admin\YouTubeSetupController::class, 'index'])->name('youtube.setup');
         Route::put('youtube/settings', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'updateSettings'])->name('youtube.update-settings');
         Route::post('youtube/test', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'testConnection'])->name('youtube.test');
+        Route::post('youtube/test-ml', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'testMLConnection'])->name('youtube.test-ml');
         Route::post('youtube/import', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'import'])->name('youtube.import');
         Route::get('youtube/import-progress', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'importProgress'])->name('youtube.import-progress');
         Route::get('youtube/history', [\App\Http\Controllers\Admin\YouTubeFeedbackController::class, 'importHistory'])->name('youtube.history');

@@ -154,6 +154,59 @@ class YouTubeFeedbackController extends Controller
     }
 
     /**
+     * Test Google Natural Language API connection
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function testMLConnection(Request $request)
+    {
+        $apiKey = $request->input('api_key');
+
+        if (empty($apiKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'API key is required'
+            ]);
+        }
+
+        try {
+            // Test with a sample text
+            $testText = "This is a wonderful and amazing test!";
+
+            $response = \Http::post("https://language.googleapis.com/v1/documents:analyzeSentiment?key={$apiKey}", [
+                'document' => [
+                    'type' => 'PLAIN_TEXT',
+                    'content' => $testText,
+                ],
+                'encodingType' => 'UTF8',
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $score = $data['documentSentiment']['score'] ?? 0;
+                $magnitude = $data['documentSentiment']['magnitude'] ?? 0;
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "API is working! Test result:\n\nSentiment Score: {$score}\nMagnitude: {$magnitude}\n\nYour API key is valid and the Natural Language API is accessible."
+                ]);
+            } else {
+                $error = $response->json();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'API Error: ' . ($error['error']['message'] ?? 'Unknown error')
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Connection Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Trigger manual YouTube comment import
      * 
      * @param Request $request

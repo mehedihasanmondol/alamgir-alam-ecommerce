@@ -39,14 +39,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">YouTube API Key</label>
-                            <input type="password" name="youtube_api_key" value="{{ $settings['youtube_api_key'] ?? '' }}"
-                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Your YouTube Data API v3 Key">
+                            <div class="flex gap-2">
+                                <input type="password" name="youtube_api_key" id="youtube_api_key" value="{{ $settings['youtube_api_key'] ?? '' }}"
+                                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Your YouTube Data API v3 Key">
+                                <button type="button" onclick="testYouTubeAPI()" class="px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition whitespace-nowrap">
+                                    🔌 Test
+                                </button>
+                            </div>
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">YouTube Channel ID</label>
-                            <input type="text" name="youtube_channel_id" value="{{ $settings['youtube_channel_id'] ?? '' }}"
+                            <input type="text" name="youtube_channel_id" id="youtube_channel_id" value="{{ $settings['youtube_channel_id'] ?? '' }}"
                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Your YouTube Channel ID">
                         </div>
@@ -125,10 +130,15 @@
                             </div>
 
                             <div id="mlApiKeyField" class="{{ ($settings['youtube_sentiment_method'] ?? 'keyword') === 'ml' ? '' : 'hidden' }}">
-                                <input type="password" name="google_natural_language_api_key"
-                                    value="{{ $settings['google_natural_language_api_key'] ?? '' }}"
-                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                                    placeholder="Google Natural Language API Key">
+                                <div class="flex gap-2">
+                                    <input type="password" name="google_natural_language_api_key" id="google_natural_language_api_key"
+                                        value="{{ $settings['google_natural_language_api_key'] ?? '' }}"
+                                        class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                                        placeholder="Google Natural Language API Key">
+                                    <button type="button" onclick="testMLAPI()" class="px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition whitespace-nowrap">
+                                        🤖 Test
+                                    </button>
+                                </div>
                             </div>
 
                             <div>
@@ -324,6 +334,92 @@
         } else {
             mlField.classList.add('hidden');
         }
+    }
+
+    function testYouTubeAPI() {
+        const apiKey = document.getElementById('youtube_api_key').value;
+        const channelId = document.getElementById('youtube_channel_id').value;
+
+        if (!apiKey || !channelId) {
+            alert('❌ Please enter both YouTube API Key and Channel ID');
+            return;
+        }
+
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Testing...';
+        btn.disabled = true;
+
+        fetch('{{ route("admin.feedback.youtube.test") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    api_key: apiKey,
+                    channel_id: channelId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+                if (data.success) {
+                    alert('✅ YouTube API Connection Successful!\n\n' + (data.message || 'API credentials are working correctly.'));
+                } else {
+                    alert('❌ YouTube API Connection Failed!\n\n' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('❌ Error testing YouTube API:\n\n' + error.message);
+            });
+    }
+
+    function testMLAPI() {
+        const apiKey = document.getElementById('google_natural_language_api_key').value;
+
+        if (!apiKey) {
+            alert('❌ Please enter Google Natural Language API Key');
+            return;
+        }
+
+        // Show loading
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Testing...';
+        btn.disabled = true;
+
+        fetch('{{ route("admin.feedback.youtube.test-ml") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    api_key: apiKey
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+                if (data.success) {
+                    alert('✅ Google Natural Language API Connection Successful!\n\n' + (data.message || 'API is working correctly.'));
+                } else {
+                    alert('❌ Google Natural Language API Connection Failed!\n\n' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('❌ Error testing ML API:\n\n' + error.message);
+            });
     }
 </script>
 @endsection
