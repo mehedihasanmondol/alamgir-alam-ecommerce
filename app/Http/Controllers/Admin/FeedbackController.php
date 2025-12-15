@@ -40,7 +40,7 @@ class FeedbackController extends Controller
     public function show(Feedback $feedback)
     {
         $feedback->load('user', 'approver');
-        
+
         return view('admin.feedback.show', compact('feedback'));
     }
 

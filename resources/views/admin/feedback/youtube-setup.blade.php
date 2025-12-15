@@ -104,7 +104,7 @@
                         </svg>
                     </button>
 
-                    <div id="sentiment-section" class="p-4 space-y-3 hidden">
+                    <div id="sentiment-section" class="p-4 space-y-3 ">
                         <div class="flex items-center p-2 bg-gray-50 rounded-lg">
                             <input type="checkbox" name="youtube_sentiment_enabled" value="1" id="sentiment_enabled"
                                 {{ ($settings['youtube_sentiment_enabled'] ?? false) ? 'checked' : '' }}
